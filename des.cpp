@@ -9,12 +9,14 @@
 
 int min_w = 15;
 
+
 #include <stdio.h>
 #include <algorithm>   // for random_shuffle()
 #include <iostream>    // for cout
 #include <list>       // for queue
 #include <vector>      // for vector
 #include <time.h>
+#define NUMNODES 2
 
 // Execution event in a descrete event driven simulation.
 class event {
@@ -79,6 +81,8 @@ public:
         return framesLeft;
     }
 };
+
+Node * totNodes[NUMNODES];
 
 struct nodeComparator {
     bool operator() (const Node * left, const Node * right) const {
@@ -185,22 +189,32 @@ int main () {
     srand(time(NULL));
     std::cout << "Wifi Discrete Event Simulator\n";
     
-    Node * n1 = new Node();
+    for(int i = 0; i < NUMNODES; i++){
+        totNodes[i] = new Node();
+        mySim.scheduleEvent (new fillNodeEvent(totNodes[i], 5));
+    }
+    //Node * n1 = new Node();
     //n1.setNumFrames(10);
     /*std::cout << "Number of frames for node 1: " << n1.totNumFrames << "\n";
     Node n2;
     n2.setNumFrames(10);
     std::cout << "Number of frames for node 2: " << n2.totNumFrames << "\n";*/
     
-    mySim.scheduleEvent (new fillNodeEvent(n1, 5));
+    //mySim.scheduleEvent (new fillNodeEvent(n1, 5));
     
     int time = 0;
     //event newEvent(time);
     //simulation mySim;
     mySim.run();
-    std::cout << "Total Time: " << n1->timeTaken<< "\n";
+    for(int i = 0; i < NUMNODES; i++){
+        std::cout << "Total Time: " << totNodes[i]->timeTaken<< "\n";
+    }
+    //std::cout << "Total Time: " << n1->timeTaken<< "\n";
     
-    delete n1;
+    for(int i = 0; i < NUMNODES; i++){
+        delete totNodes[i];
+    }
+    //delete n1;
     //mySim.scheduleEvent(newEvent);
     // theSimulation.scheduleEvent (new arriveEvent (t, 1 + irand (4)));
     
