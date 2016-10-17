@@ -151,10 +151,9 @@ protected:
 
 class counterEvent : public event {
 public:
-    counterEvent (Node * s, unsigned int t): event(t), n(s), curTime(t){ }
+    counterEvent (unsigned int t): event(t), curTime(t){ }
     virtual void processEvent ();
 protected:
-    Node * n;
     int curTime;
 };
 
@@ -179,34 +178,43 @@ void fillNodeEvent::processEvent () {
     std::cout << "Start time for node: " << n->startTime << "\n";
     
     
-    mySim.eventQueue.insert(mySim.eventIt, new counterEvent(n, time+1));
+    mySim.eventQueue.insert(mySim.eventIt, new counterEvent(time+1));
 }
 
 void counterEvent::processEvent () {
     //std::cout << "Number of Active Nodes: " << activeNodes.size() << "\n";
-    //std::cout << "Time: " << curTime << "   ";
+    std::cout << "Time: " << curTime << "   " << std::endl;
     mySim.eventIt++;
+    std::list<Node*>::iterator nodeIt = activeNodes.begin();
     
-    //Send Frame
-    if(n->backOff == 0){
-        n->framesLeft--;
-        n->timeTaken += 1;
-        curTime += 1;
-        n->mulitiplier = 1;
-        n->setBackOff();
-        //std::cout << "Sent a Frame" << "\n";
-        if(n->getFramesLeft() != 0){
-            mySim.eventQueue.insert(mySim.eventIt,new counterEvent(n, curTime));
+    while(nodeIt != activeNodes.end()){
+        Node * n = (*nodeIt);
+        //Send Frame
+        if(n->backOff == 0){
+            n->framesLeft--;
+            n->timeTaken += 1;
+            curTime += 1;
+            n->mulitiplier = 1;
+            n->setBackOff();
+            std::cout << "Sent a Frame" << "\n";
+            if(n->getFramesLeft() == 0){
+             //mySim.eventQueue.insert(mySim.eventIt,new counterEvent(curTime));
+            nodeIt = activeNodes.erase(nodeIt);
+            }
         }
+        
+        //Decrement backoff counter and increase time taken
+        else{
+            //std::cout << "Backoff" << "\n";
+            n->backOff--;
+            n->timeTaken += 1;
+            curTime += 1;
+            //mySim.eventQueue.insert(mySim.eventIt,new counterEvent(curTime));
+        }
+        nodeIt++;
     }
-    
-    //Decrement backoff counter and increase time taken
-    else{
-        //std::cout << "Backoff" << "\n";
-        n->backOff--;
-        n->timeTaken += 1;
-        curTime += 1;
-        mySim.eventQueue.insert(mySim.eventIt,new counterEvent(n, curTime));
+    if(activeNodes.size() != 0){
+        mySim.eventQueue.insert(mySim.eventIt,new counterEvent(curTime));
     }
     
 }
