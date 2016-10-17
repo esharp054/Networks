@@ -108,15 +108,16 @@ public:
     void run ();
     void scheduleEvent(event * newEvent) {
         std::list<event*>::iterator eventSche = eventQueue.begin();
-        if(! eventQueue.empty()){
+        while(eventSche != eventQueue.end()){
             if((*eventSche)->time < newEvent->time){
                 eventSche++;
             }
             else{
                 eventQueue.insert(eventSche, newEvent);
+                break;
             }
         }
-        else{
+        if(eventSche == eventQueue.end()){
             eventQueue.push_back(newEvent);
         }
     }
@@ -182,8 +183,8 @@ void fillNodeEvent::processEvent () {
 }
 
 void counterEvent::processEvent () {
-    std::cout << "Number of Active Nodes: " << activeNodes.size() << "\n";
-    std::cout << "Time: " << curTime << "   ";
+    //std::cout << "Number of Active Nodes: " << activeNodes.size() << "\n";
+    //std::cout << "Time: " << curTime << "   ";
     mySim.eventIt++;
     
     //Send Frame
@@ -193,7 +194,7 @@ void counterEvent::processEvent () {
         curTime += 1;
         n->mulitiplier = 1;
         n->setBackOff();
-        std::cout << "Sent a Frame" << "\n";
+        //std::cout << "Sent a Frame" << "\n";
         if(n->getFramesLeft() != 0){
             mySim.eventQueue.insert(mySim.eventIt,new counterEvent(n, curTime));
         }
@@ -201,7 +202,7 @@ void counterEvent::processEvent () {
     
     //Decrement backoff counter and increase time taken
     else{
-        std::cout << "Backoff" << "\n";
+        //std::cout << "Backoff" << "\n";
         n->backOff--;
         n->timeTaken += 1;
         curTime += 1;
