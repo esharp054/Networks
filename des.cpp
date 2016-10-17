@@ -17,6 +17,7 @@ int min_w = 15;
 #include <vector>      // for vector
 #include <time.h>
 #define NUMNODES 2
+#define MAXMULTIPLIER 8
 
 // Execution event in a descrete event driven simulation.
 class event {
@@ -49,6 +50,7 @@ int irand (int n)
     return rnd % n;
 }
 
+
 class Node{
     //private:
 public:
@@ -57,10 +59,14 @@ public:
     //int flowTime;
     //Number of frames left to send
     //Number of frames sent
+    
+    //Information we need to keep track of
     int framesLeft = 0;
     int timeTaken = 0;
     int startTime = 0;
     int backOff = 0;
+    
+    //Multiplier for the window
     int mulitiplier = 1;
     
     
@@ -82,7 +88,12 @@ public:
     }
 };
 
+//Global array to hold all the nodes
 Node * totNodes[NUMNODES];
+
+//List of active nodes
+std::list<Node*> activeNodes;
+
 
 struct nodeComparator {
     bool operator() (const Node * left, const Node * right) const {
@@ -96,13 +107,24 @@ public:
     simulation () : numberOfNodes(0), time(0), eventQueue (){}
     void run ();
     void scheduleEvent(event * newEvent) {
-        eventQueue.push_back(newEvent);
+        std::list<event*>::iterator eventSche = eventQueue.begin();
+        if(! eventQueue.empty()){
+            if((*eventSche)->time < newEvent->time){
+                eventSche++;
+            }
+            else{
+                eventQueue.insert(eventSche, newEvent);
+            }
+        }
+        else{
+            eventQueue.push_back(newEvent);
+        }
     }
     unsigned int numberOfNodes;
     unsigned int time;
-protected:
     std::list<event*> eventQueue;
-    std::list<Node> activeNodes;
+    std::list<event*>::iterator eventIt = eventQueue.begin();
+protected:
 };
 
 void simulation::run () {
@@ -146,18 +168,23 @@ public:
 } mySim;
 
 void fillNodeEvent::processEvent () {
+    mySim.eventIt++;
     n->setNumFrames(10);
     n->startTime = time;
     n->setBackOff();
+    activeNodes.push_back(n);
     
-    std::cout << "Number of frames for node: " << n->totNumFrames << "\n";
+    std::cout << "Number of frames for Node: " << n->totNumFrames << "\n";
     std::cout << "Start time for node: " << n->startTime << "\n";
     
-    mySim.scheduleEvent(new counterEvent(n, time));
+    
+    mySim.eventQueue.insert(mySim.eventIt, new counterEvent(n, time+1));
 }
 
 void counterEvent::processEvent () {
+    std::cout << "Number of Active Nodes: " << activeNodes.size() << "\n";
     std::cout << "Time: " << curTime << "   ";
+    mySim.eventIt++;
     
     //Send Frame
     if(n->backOff == 0){
@@ -168,7 +195,7 @@ void counterEvent::processEvent () {
         n->setBackOff();
         std::cout << "Sent a Frame" << "\n";
         if(n->getFramesLeft() != 0){
-            mySim.scheduleEvent(new counterEvent(n, curTime));
+            mySim.eventQueue.insert(mySim.eventIt,new counterEvent(n, curTime));
         }
     }
     
@@ -178,7 +205,7 @@ void counterEvent::processEvent () {
         n->backOff--;
         n->timeTaken += 1;
         curTime += 1;
-        mySim.scheduleEvent(new counterEvent(n, curTime));
+        mySim.eventQueue.insert(mySim.eventIt,new counterEvent(n, curTime));
     }
     
 }
@@ -186,12 +213,12 @@ void counterEvent::processEvent () {
 
 
 int main () {
-    srand(time(NULL));
+    //srand(time(NULL));
     std::cout << "Wifi Discrete Event Simulator\n";
     
     for(int i = 0; i < NUMNODES; i++){
         totNodes[i] = new Node();
-        mySim.scheduleEvent (new fillNodeEvent(totNodes[i], 5));
+        mySim.scheduleEvent(new fillNodeEvent(totNodes[i], rand() % 15 + 1));
     }
     //Node * n1 = new Node();
     //n1.setNumFrames(10);
@@ -202,7 +229,7 @@ int main () {
     
     //mySim.scheduleEvent (new fillNodeEvent(n1, 5));
     
-    int time = 0;
+    //int time = 0;
     //event newEvent(time);
     //simulation mySim;
     mySim.run();
