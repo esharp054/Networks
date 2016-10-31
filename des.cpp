@@ -179,12 +179,21 @@ void fillNodeEvent::processEvent () {
     
     
     mySim.eventQueue.insert(mySim.eventIt, new counterEvent(time+1));
+    /*if(mySim.eventIt != mySim.eventQueue.end() && (*mySim.eventIt)->time <= n->startTime){
+        mySim.eventIt--;
+        mySim.eventQueue.insert(mySim.eventIt, new counterEvent(time+1));
+    }
+    
+    else{
+        mySim.eventQueue.insert(mySim.eventIt, new counterEvent(time+1));
+        mySim.eventIt++;
+    }*/
 }
 
 void counterEvent::processEvent () {
+    mySim.eventIt++;
     //std::cout << "Number of Active Nodes: " << activeNodes.size() << "\n";
     std::cout << "Time: " << curTime << "   " << std::endl;
-    mySim.eventIt++;
     std::list<Node*>::iterator nodeIt = activeNodes.begin();
     
     while(nodeIt != activeNodes.end()){
@@ -214,7 +223,13 @@ void counterEvent::processEvent () {
         nodeIt++;
     }
     if(activeNodes.size() != 0){
-        mySim.eventQueue.insert(mySim.eventIt,new counterEvent(curTime));
+        if((*mySim.eventIt)->time < curTime){
+            //mySim.eventQueue.push_front(mySim.eventIt,new counterEvent(curTime));
+        }
+        else{
+            mySim.eventQueue.insert(mySim.eventIt,new counterEvent(curTime));
+        }
+        
     }
     
 }
